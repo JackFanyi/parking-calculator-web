@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#07c160">
+  <title>停车计费助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+      padding-bottom: 80px;
+    }
+    .header {
+      background: #07c160;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 { font-size: 20px; font-weight: 600; }
+    .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .title { font-size: 18px; font-weight: bold; margin-bottom: 16px; color: #333; }
+    .form-item { margin-bottom: 16px; }
+    .label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+    input, select {
+      width: 100%;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 16px;
+      background: #fafafa;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #07c160;
+      background: #fff;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: opacity 0.2s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: #07c160; color: #fff; }
+    .btn-share { background: #576b95; color: #fff; margin-top: 10px; }
+    .btn-danger { background: #fa5151; color: #fff; }
+    .btn-secondary { background: #f5f5f5; color: #666; }
+    .result-box {
+      background: linear-gradient(135deg, #07c160, #10aeff);
+      border-radius: 12px;
+      padding: 30px;
+      color: #fff;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .result-title { font-size: 14px; opacity: 0.9; }
+    .result-amount { font-size: 48px; font-weight: bold; margin: 8px 0; }
+    .result-unit { font-size: 20px; }
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+    .detail-item:last-child { border-bottom: none; }
+    .detail-label { color: #666; }
+    .detail-value { color: #333; font-weight: 500; }
+    .action-btns { display: flex; gap: 10px; margin-top: 16px; }
+    .action-btns .btn { flex: 1; }
+    .share-tip {
+      background: linear-gradient(135deg, #fff9f0, #fff0f5);
+      text-align: center;
+    }
+    .tip-title { font-size: 16px; font-weight: bold; color: #ff6b6b; margin-bottom: 8px; }
+    .tip-desc { font-size: 13px; color: #666; margin-bottom: 12px; }
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      display: flex;
+      border-top: 1px solid #eee;
+      z-index: 100;
+    }
+    .nav-item {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+    .nav-item.active { color: #07c160; }
+    .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .record-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .record-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .record-fee { font-size: 24px; font-weight: bold; color: #07c160; }
+    .record-info { display: flex; margin-bottom: 6px; font-size: 13px; }
+    .info-label { color: #999; width: 80px; }
+    .info-value { color: #333; flex: 1; }
+    .record-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
+    .record-actions .btn { flex: 1; font-size: 13px; padding: 8px; margin: 0; }
+    .empty-state { text-align: center; padding: 40px 20px; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 16px; color: #333; font-weight: 500; }
+    .empty-desc { font-size: 13px; color: #999; margin-top: 6px; }
+    .tips-box { background: #f0f9ff; }
+    .tip-item { font-size: 13px; color: #666; line-height: 2; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 85%;
+      max-width: 320px;
+      text-align: center;
+    }
+    .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+    .modal-text { font-size: 14px; color: #666; margin-bottom: 20px; }
+    .modal-btns { display: flex; gap: 10px; }
+    .qr-code { margin: 16px auto; width: 180px; height: 180px; }
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 300;
+      display: none;
+    }
+    .toast.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>停车计费助手</h1>
+  </div>
+
+  <div class="container">
+    <!-- 计费页面 -->
+    <div class="page active" id="page-calc">
+      <div class="card">
+        <div class="title">停车时间</div>
+        <div class="form-item">
+          <label class="label">入场时间</label>
+          <input type="datetime-local" id="startTime">
+        </div>
+        <div class="form-item">
+          <label class="label">离场时间</label>
+          <input type="datetime-local" id="endTime">
+        </div>
+        <div class="form-item">
+          <label class="label">车牌号（可选）</label>
+          <input type="text" id="plateNumber" placeholder="请输入车牌号">
+        </div>
+        <button class="btn btn-primary" onclick="calculateFee()">计算费用</button>
+      </div>
+
+      <div class="card" id="resultCard" style="display:none;">
+        <div class="result-box">
+          <div class="result-title">停车费用</div>
+          <div class="result-amount"><span id="totalFee">0.00</span><span class="result-unit">元</span></div>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">停车时长</span>
+          <span class="detail-value" id="durationStr">-</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">免费时长</span>
+          <span class="detail-value"><span id="freeMinutes">15</span>分钟</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">首小时费用</span>
+          <span class="detail-value"><span id="firstHourFee">5</span>元</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">超出每小时</span>
+          <span class="detail-value"><span id="extraHourFee">3</span>元</span>
+        </div>
+        <div class="detail-item" id="dailyCapRow">
+          <span class="detail-label">每日封顶</span>
+          <span class="detail-value"><span id="dailyCap">50</span>元</span>
+        </div>
+        <div class="action-btns">
+          <button class="btn btn-share" onclick="shareApp()">一键分享给朋友</button>
+          <button class="btn btn-primary" onclick="saveRecord()">保存记录</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="title">快速操作</div>
+        <button class="btn btn-primary" onclick="setNow('start')">设为当前时间（入场）</button>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="setNow('end')">设为当前时间（离场）</button>
+      </div>
+
+      <div class="card share-tip">
+        <div class="tip-title">分享此工具</div>
+        <div class="tip-desc">点击下方按钮，即可将此停车计费工具分享给朋友！</div>
+        <button class="btn btn-share" onclick="shareApp()">分享给好友</button>
+        <button class="btn btn-secondary" style="margin-top:8px;" onclick="copyLink()">复制链接</button>
+      </div>
+    </div>
+
+    <!-- 历史记录页面 -->
+    <div class="page" id="page-history">
+      <div id="historyList"></div>
+    </div>
+
+    <!-- 设置页面 -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="title">计费规则设置</div>
+        <div class="form-item">
+          <label class="label">免费时长（分钟）</label>
+          <input type="number" id="setFreeMinutes" value="15">
+        </div>
+        <div class="form-item">
+          <label class="label">首小时费用（元）</label>
+          <input type="number" id="setFirstHourFee" value="5">
+        </div>
+        <div class="form-item">
+          <label class="label">超出每小时费用（元）</label>
+          <input type="number" id="setExtraHourFee" value="3">
+        </div>
+        <div class="form-item">
+          <label class="label">每日封顶费用（元，0表示不封顶）</label>
+          <input type="number" id="setDailyCap" value="50">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="resetSettings()">恢复默认</button>
+      </div>
+      <div class="card tips-box">
+        <div class="title" style="color:#10aeff;">计费规则说明</div>
+        <div class="tip-item">1. 停车时长在免费时长内不收费</div>
+        <div class="tip-item">2. 超出免费时长后，首小时按首小时费用计算</div>
+        <div class="tip-item">3. 超出首小时后，按每小时额外费用计算</div>
+        <div class="tip-item">4. 费用达到每日封顶后不再增加</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="nav-bar">
+    <button class="nav-item active" onclick="switchPage('calc')">
+      <span class="nav-icon">&#128181;</span>
+      <span>计费</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('history')">
+      <span class="nav-icon">&#128203;</span>
+      <span>记录</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('settings')">
+      <span class="nav-icon">&#9881;</span>
+      <span>设置</span>
+    </button>
+  </div>
+
+  <!-- 分享弹窗 -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal-content">
+      <div class="modal-title">分享给朋友</div>
+      <div class="modal-text">将此链接发送给朋友，他们打开即可使用！</div>
+      <div id="qrContainer" class="qr-code"></div>
+      <input type="text" id="shareUrl" readonly style="width:100%;margin-bottom:12px;padding:8px;font-size:12px;border:1px solid #eee;border-radius:4px;">
+      <div class="modal-btns">
+        <button class="btn btn-primary" onclick="copyShareUrl()">复制链接</button>
+        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script>
+    const defaultSettings = {
+      freeMinutes: 15,
+      firstHourFee: 5,
+      extraHourFee: 3,
+      dailyCap: 50,
+      nightFee: 2
+    };
+
+    let currentSettings = { ...defaultSettings };
+    let lastResult = null;
+
+    function init() {
+      const saved = localStorage.getItem('parkingSettings');
+      if (saved) {
+        currentSettings = JSON.parse(saved);
+      } else {
+        localStorage.setItem('parkingSettings', JSON.stringify(defaultSettings));
+      }
+      updateSettingsInputs();
+      renderHistory();
+    }
+
+    function setNow(type) {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      const str = now.toISOString().slice(0, 16);
+      document.getElementById(type + 'Time').value = str;
+    }
+
+    function calculateFee() {
+      const startVal = document.getElementById('startTime').value;
+      const endVal = document.getElementById('endTime').value;
+      if (!startVal || !endVal) {
+        showToast('请选择时间');
+        return;
+      }
+
+      const startTime = new Date(startVal);
+      const endTime = new Date(endVal);
+      let durationMs = endTime - startTime;
+      if (durationMs < 0) {
+        showToast('离场时间不能早于入场时间');
+        return;
+      }
+
+      const durationMinutes = Math.floor(durationMs / (1000 * 60));
+      let fee = 0;
+
+      if (durationMinutes > currentSettings.freeMinutes) {
+        const chargeMinutes = durationMinutes - currentSettings.freeMinutes;
+        const chargeHours = Math.ceil(chargeMinutes / 60);
+        if (chargeHours <= 1) {
+          fee = currentSettings.firstHourFee;
+        } else {
+          fee = currentSettings.firstHourFee + (chargeHours - 1) * currentSettings.extraHourFee;
+        }
+        if (currentSettings.dailyCap > 0 && fee > currentSettings.dailyCap) {
+          fee = currentSettings.dailyCap;
+        }
+      }
+
+      const hours = Math.floor(durationMinutes / 60);
+      const mins = durationMinutes % 60;
+      let durationStr = '';
+      if (hours > 0) durationStr += hours + '小时';
+      if (mins > 0) durationStr += mins + '分钟';
+      if (durationMinutes === 0) durationStr = '0分钟';
+
+      lastResult = {
+        startTime: startTime.toLocaleString('zh-CN'),
+        endTime: endTime.toLocaleString('zh-CN'),
+        durationStr,
+        fee: fee.toFixed(2),
+        plateNumber: document.getElementById('plateNumber').value || '未填写'
+      };
+
+      document.getElementById('totalFee').textContent = fee.toFixed(2);
+      document.getElementById('durationStr').textContent = durationStr;
+      document.getElementById('freeMinutes').textContent = currentSettings.freeMinutes;
+      document.getElementById('firstHourFee').textContent = currentSettings.firstHourFee;
+      document.getElementById('extraHourFee').textContent = currentSettings.extraHourFee;
+      document.getElementById('dailyCap').textContent = currentSettings.dailyCap;
+      document.getElementById('dailyCapRow').style.display = currentSettings.dailyCap > 0 ? 'flex' : 'none';
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveRecord() {
+      if (!lastResult) return;
+      const records = JSON.parse(localStorage.getItem('parkingRecords') || '[]');
+      records.unshift({
+        id: Date.now(),
+        ...lastResult,
+        date: new Date().toLocaleDateString('zh-CN')
+      });
+      localStorage.setItem('parkingRecords', JSON.stringify(records));
+      showToast('保存成功');
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const records = JSON.parse(localStorage.getItem('parkingRecords') || '[]');
+      const container = document.getElementById('historyList');
+      if (records.length === 0) {
+        container.innerHTML = `
+          <div class="card">
+            <div class="empty-state">
+              <div class="empty-icon">&#128203;</div>
+              <div class="empty-text">暂无停车记录</div>
+              <div class="empty-desc">计算费用后点击"保存记录"即可在此查看</div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = records.map(r => `
+        <div class="record-item">
+          <div class="record-header">
+            <span class="detail-label">${r.date}</span>
+            <span class="record-fee">${r.fee}元</span>
+          </div>
+          <div class="record-info"><span class="info-label">车牌号：</span><span class="info-value">${r.plateNumber}</span></div>
+          <div class="record-info"><span class="info-label">停车时长：</span><span class="info-value">${r.durationStr}</span></div>
+          <div class="record-info"><span class="info-label">入场：</span><span class="info-value">${r.startTime}</span></div>
+          <div class="record-info"><span class="info-label">离场：</span><span class="info-value">${r.endTime}</span></div>
+          <div class="record-actions">
+            <button class="btn btn-share" onclick="shareRecord('${r.durationStr}', '${r.fee}')">分享</button>
+            <button class="btn btn-danger" onclick="deleteRecord(${r.id})">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deleteRecord(id) {
+      if (!confirm('确定要删除这条记录吗？')) return;
+      let records = JSON.parse(localStorage.getItem('parkingRecords') || '[]');
+      records = records.filter(r => r.id !== id);
+      localStorage.setItem('parkingRecords', JSON.stringify(records));
+      renderHistory();
+      showToast('已删除');
+    }
+
+    function saveSettings() {
+      currentSettings = {
+        freeMinutes: parseFloat(document.getElementById('setFreeMinutes').value) || 0,
+        firstHourFee: parseFloat(document.getElementById('setFirstHourFee').value) || 0,
+        extraHourFee: parseFloat(document.getElementById('setExtraHourFee').value) || 0,
+        dailyCap: parseFloat(document.getElementById('setDailyCap').value) || 0,
+      };
+      localStorage.setItem('parkingSettings', JSON.stringify(currentSettings));
+      showToast('保存成功');
+    }
+
+    function resetSettings() {
+      currentSettings = { ...defaultSettings };
+      localStorage.setItem('parkingSettings', JSON.stringify(defaultSettings));
+      updateSettingsInputs();
+      showToast('已恢复默认');
+    }
+
+    function updateSettingsInputs() {
+      document.getElementById('setFreeMinutes').value = currentSettings.freeMinutes;
+      document.getElementById('setFirstHourFee').value = currentSettings.firstHourFee;
+      document.getElementById('setExtraHourFee').value = currentSettings.extraHourFee;
+      document.getElementById('setDailyCap').value = currentSettings.dailyCap;
+    }
+
+    function switchPage(page) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      if (page === 'history') renderHistory();
+    }
+
+    async function shareApp() {
+      const url = window.location.href;
+      const title = lastResult
+        ? `停车${lastResult.durationStr}，费用${lastResult.fee}元 | 停车计费助手`
+        : '停车计费助手 - 轻松计算停车费用';
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: title,
+            text: '推荐一个好用的停车计费工具，输入时间就能算费用！',
+            url: url
+          });
+          return;
+        } catch (e) {}
+      }
+      showShareModal(url, title);
+    }
+
+    function shareRecord(duration, fee) {
+      const url = window.location.href;
+      const title = `停车${duration}，费用${fee}元 | 停车计费助手`;
+      if (navigator.share) {
+        navigator.share({
+          title: title,
+          text: '我的停车费用计算结果',
+          url: url
+        }).catch(() => showShareModal(url, title));
+      } else {
+        showShareModal(url, title);
+      }
+    }
+
+    function showShareModal(url, title) {
+      document.getElementById('shareUrl').value = url;
+      document.getElementById('shareModal').classList.add('active');
+      const qrContainer = document.getElementById('qrContainer');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: url,
+        width: 180,
+        height: 180,
+        colorDark: '#333',
+        colorLight: '#fff'
+      });
+    }
+
+    function closeModal() {
+      document.getElementById('shareModal').classList.remove('active');
+    }
+
+    function copyLink() {
+      copyText(window.location.href);
+    }
+
+    function copyShareUrl() {
+      copyText(document.getElementById('shareUrl').value);
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('链接已复制'));
+      } else {
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('链接已复制');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
